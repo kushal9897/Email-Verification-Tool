@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        select {
+            margin: 10px 0;
+            padding: 5px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #fff;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Policy Manager</h1>
+    <label for="context">Select Context:</label>
+    <select id="context">
+        <option value="development">Development</option>
+        <option value="production">Production</option>
+        <option value="staging">Staging</option>
+    </select>
+
+    <h2>Policies for <span id="contextLabel">Production</span>:</h2>
+    <ul id="policyList">
+        <li>No policies available for this context.</li>
+    </ul>
+
+    <script>
+        const policies = [
+            {
+                name: "logging_policy",
+                compatible_with: ["auth_policy", "resource_limiter"],
+                conflicts_with: [],
+                load_conditions: ["development", "production"]
+            },
+            {
+                name: "auth_policy",
+                compatible_with: ["logging_policy", "security_policy"],
+                conflicts_with: [],
+                load_conditions: ["production"]
+            },
+            {
+                name: "debug_policy",
+                compatible_with: [],
+                conflicts_with: ["security_policy", "auth_policy"],
+                load_conditions: ["development"]
+            },
+            {
+                name: "security_policy",
+                compatible_with: ["auth_policy"],
+                conflicts_with: ["debug_policy"],
+                load_conditions: ["production"]
+            }
+        ];
+
+        const contextSelect = document.getElementById('context');
+        const policyList = document.getElementById('policyList');
+        const contextLabel = document.getElementById('contextLabel');
+
+        function updatePolicyList() {
+            const selectedContext = contextSelect.value;
+            contextLabel.textContent = selectedContext.charAt(0).toUpperCase() + selectedContext.slice(1);
+
+            // Clear current policy list
+            policyList.innerHTML = '';
+
+            // Filter policies based on the selected context
+            const applicablePolicies = policies.filter(policy => policy.load_conditions.includes(selectedContext));
+
+            if (applicablePolicies.length > 0) {
+                applicablePolicies.forEach(policy => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<strong>${policy.name}</strong>`;
+                    if (policy.conflicts_with.length > 0) {
+                        listItem.innerHTML += ` (Conflicts with: ${policy.conflicts_with.join(', ')})`;
+                    }
+                    policyList.appendChild(listItem);
+                });
+            } else {
+                policyList.innerHTML = '<li>No policies available for this context.</li>';
+            }
+        }
+
+        // Update policy list when the context changes
+        contextSelect.addEventListener('change', updatePolicyList);
+
+        // Initial load
+        updatePolicyList();
+    </script>
+</body>
+</html>
